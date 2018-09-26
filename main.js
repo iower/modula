@@ -1,20 +1,30 @@
 document.addEventListener("DOMContentLoaded", () => {
 	
-	
+	var module1;
 	setTimeout(function() {
-		var module1 = new Module();
+		module1 = new Module();
 	}, 250);
 	
 	var module2;
 	setTimeout(function() {
-		module2 = new Module({x: 300, y: 300});
+		module2 = new Module({x: 350, y: 300});
 	}, 500);
 	
 	var module3;
 	setTimeout(function() {
 		module3 = new Module({x: 500, y: 500});
 	}, 750);
+
+	setTimeout(function() {
+		const success = wires.add(module1.outs.stdout, module2.ins.stdin);
+		console.log('wire', success);
+	}, 1000);
 	
+	setTimeout(function() {
+		const success = wires.add(module2.outs.stdout, module3.ins.stdin);
+		console.log('wire', success);
+	}, 1200);
+
 	setTimeout(function() {
 		module3.drag({x: 650, y: 500});
 	}, 2000);
@@ -22,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	setTimeout(function() {
 		module2.drag({x: 500, y: 300});
 	}, 4000);
+	
+	
 });
 
 
@@ -36,16 +48,20 @@ let moduleId = 0;
 let scene = {
 	redraw: () => {
 		console.log('>>> scene.redraw()');
+		
 		// clear scene
 		ctx.fillStyle = "#fff";
 		ctx.fillRect(0, 0, 800, 600);
 		
-		console.log(modules);
 		// draw modules
+		
 		for (let i = 0; i < modules.length; i++) {
 			const module = modules[i];
 			module.draw();
 		}
+		
+		// draw wires
+		wires.draw();
 	},
 }
 
@@ -74,19 +90,23 @@ const Module = function(params) {
 		
 	};
 	
-	this.inputs = [
-		{
+	this.ins = {
+		'stdin': {
+			module: this,
+			direction: 'in',
 			name: 'soundInput1',
 			type: 'sound',
 		}
-	];
+	};
 	
-	this.outputs = [
-		{
+	this.outs = {
+		'stdout': {
+			module: this,
+			direction: 'out',
 			name: 'soundOutput1',
 			type: 'sound',
 		}
-	];
+	};
 	
 	function drawBorder(x1, y1, x2, y2) {
 		ctx.beginPath();
@@ -119,24 +139,60 @@ const Module = function(params) {
 }
 
 const wires = {
-	set: [],
+	_set: [],
 	
-	add: (terminal1, terminal2) => {
-		wires.set.push({
-			terminals: [terminal1, terminal2],
-		});
+	add: (port1, port2) => {
+		if (port1, port2) {
+			wires._set.push({ends: [port1, port2]});
+			scene.redraw();
+			return true;
+		} else {
+			return false;
+		}
+	},
+	
+	get: () => {
+		return wires._set;
 	},
 	
 	cleanup: () => {
-		for (let i = 0; i < wires.set.length; i++) {
+		for (let i = 0; i < wires._set.length; i++) {
 			// todo <<<
+		}
+	},
+	draw: () => {
+		for (let i = 0; i < wires._set.length; i++) {
+			let wire = wires._set[i];
+			let module1 = wire.ends[0].module;
+			let module2 = wire.ends[1].module;
+			const port1Direction = wire.ends[0].direction;
+			const port2Direction = wire.ends[1].direction;
+			
+			if (port1Direction == 'in') {
+				x1 = module1.x - module1.width/2;
+			}
+			if (port1Direction == 'out') {
+				x1 = module1.x + module1.width/2;
+			}
+			const y1 = module1.y;
+			
+			if (port2Direction == 'in') {
+				x2 = module2.x - module2.width/2;
+			}
+			if (port2Direction == 'out') {
+				x2 = module2.x + module2.width;
+			}
+			const y2 = module2.y;
+			
+			ctx.beginPath();
+			ctx.moveTo(x1, y1);
+			ctx.lineTo(x2, y2);
+			ctx.stroke();
+			ctx.closePath();
 		}
 	},
 };
 
-
-
-//wires.add(module1.outs.stdout, module1.ins.stdin);
 
 
 /* MOUSE EVENTS */

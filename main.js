@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	setTimeout(function() {
 		const success = wires.add(module2.outs.stdout, module3.ins.stdin);
 		console.log('wire', success);
-	}, 1200);
+	}, 1500);
 
 	setTimeout(function() {
 		module3.drag({x: 650, y: 500});
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	
 	setTimeout(function() {
 		module2.drag({x: 500, y: 300});
-	}, 4000);
+	}, 2500);
 	
 	
 });
@@ -96,6 +96,12 @@ const Module = function(params) {
 			direction: 'in',
 			name: 'soundInput1',
 			type: 'sound',
+			getX: () => {
+				return this.x - this.width/2;
+			},
+			getY: () => {
+				return this.y;
+			}
 		}
 	};
 	
@@ -105,6 +111,13 @@ const Module = function(params) {
 			direction: 'out',
 			name: 'soundOutput1',
 			type: 'sound',
+			getX: () => {
+				console.log('this = ', this);
+				return this.x + this.width/2;
+			},
+			getY: () => {
+				return this.y;
+			}
 		}
 	};
 	
@@ -132,6 +145,23 @@ const Module = function(params) {
 		drawBorder(rightPos, topPos, rightPos, bottomPos);
 		drawBorder(rightPos, bottomPos, leftPos, bottomPos);
 		drawBorder(leftPos, bottomPos, leftPos, topPos);
+		
+		// draw ports
+		const drawPort = (port) => {
+			const x = port.getX();
+			const y = port.getY();
+			ctx.beginPath();
+			ctx.arc(x, y, 3, 0, 2*Math.PI);
+			ctx.stroke();
+		};
+		for (let portname in this.ins) {
+			const port = this.ins[portname];
+			drawPort(port);
+		}
+		for (let portname in this.outs) {
+			const port = this.outs[portname];
+			drawPort(port);
+		}
 	};
 	
 	modules.push(this);
@@ -163,26 +193,14 @@ const wires = {
 	draw: () => {
 		for (let i = 0; i < wires._set.length; i++) {
 			let wire = wires._set[i];
-			let module1 = wire.ends[0].module;
-			let module2 = wire.ends[1].module;
-			const port1Direction = wire.ends[0].direction;
-			const port2Direction = wire.ends[1].direction;
 			
-			if (port1Direction == 'in') {
-				x1 = module1.x - module1.width/2;
-			}
-			if (port1Direction == 'out') {
-				x1 = module1.x + module1.width/2;
-			}
-			const y1 = module1.y;
+			const port1 = wire.ends[0];
+			const port2 = wire.ends[1];
 			
-			if (port2Direction == 'in') {
-				x2 = module2.x - module2.width/2;
-			}
-			if (port2Direction == 'out') {
-				x2 = module2.x + module2.width;
-			}
-			const y2 = module2.y;
+			const x1 = port1.getX();
+			const y1 = port1.getY();
+			const x2 = port2.getX();
+			const y2 = port2.getY();
 			
 			ctx.beginPath();
 			ctx.moveTo(x1, y1);
